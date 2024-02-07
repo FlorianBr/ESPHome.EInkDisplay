@@ -1,0 +1,224 @@
+# Configuration for the lilygo T4 eink module
+# Also see https://github.com/esphome/feature-requests/issues/1109 for info
+
+# Resolution of the display: 960 x 540
+
+esphome:
+  name: einkdisplay
+  friendly_name: einkdisplay
+  platform: esp32
+  board: esp32dev
+  platformio_options:
+    upload_speed: 1500000
+    board_upload.maximum_ram_size: 8388608
+    board_upload.maximum_size: 16777216
+    board_build.flags:
+      -DBOARD_HAS_PSRAM
+      -mfix-esp32-psram-cache-issue
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: ""
+
+ota:
+  password: ""
+
+wifi:
+  ssid: "<TheSSID>"
+  password: "<Secret!>"
+
+  ap:
+    ssid: '${friendly_name} FAP'
+    password: "<AnotherSecret>"
+
+captive_portal:
+
+time:
+  - platform: homeassistant
+    id: esptime
+
+web_server:
+  port: 80
+  include_internal: true
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      # SENSOP_VN
+      number: GPIO39
+      inverted: true
+    name: "Button 1"
+  - platform: gpio
+    pin:
+      number: GPIO34
+      inverted: true
+    name: "Button 2"
+  - platform: gpio
+    pin:
+      number: GPIO35
+      inverted: true
+    name: "Button 3"
+
+sensor:
+  - platform: homeassistant
+    id: now_temp
+    entity_id: sensor.hamburg_fu_temperatur
+  - platform: homeassistant
+    id: now_humi
+    entity_id: sensor.hamburg_fu_luftfeuchtigkeit
+  - platform: homeassistant
+    id: now_windspeed
+    entity_id: sensor.hamburg_fu_windgeschwindigkeit
+  - platform: homeassistant
+    id: now_clouds
+    entity_id: sensor.hamburg_fu_bewolkungsgrad
+  - platform: homeassistant
+    id: now_niedersch
+    entity_id: sensor.hamburg_fu_niederschlagswahrscheinlichkeit
+  - platform: homeassistant
+    id: now_press
+    entity_id: sensor.hamburg_fu_druck
+
+text_sensor:
+  # HA Inputs
+  - platform: homeassistant
+    entity_id: person.1
+    id: pers_1
+  - platform: homeassistant
+    entity_id: person.2
+    id: pers_2
+  - platform: homeassistant
+    id: now_zustand
+    entity_id: sensor.hamburg_fu_wetterzustand
+
+image:
+  - file: mdi:check-circle-outline
+    id: icon_check
+    resize: 50x50
+  - file: mdi:close-circle-outline
+    id: icon_close
+    resize: 50x50
+  - file: mdi:thermometer
+    id: icon_therm
+    resize: 50x50
+  - file: mdi:water-percent
+    id: icon_humidity
+    resize: 50x50
+  - file: mdi:windsock
+    id: icon_wind
+    resize: 50x50
+  - file: mdi:weather-cloudy
+    id: icon_clouds
+    resize: 50x50
+  - file: mdi:umbrella-outline
+    id: icon_rain
+    resize: 50x50
+  - file: mdi:gauge
+    id: icon_press
+    resize: 50x50
+
+font:
+  - id: roboto
+    file: "gfonts://Roboto"
+    size: 50
+
+# The external display driver
+external_components:
+  - source: github://danuw/esphome-components2
+    components: ["t547"]
+
+graph:
+  - id: temp_graph
+    sensor: now_temp
+    duration: 96h
+    width: 450
+    height: 250
+    max_value: 30.0
+    min_value: -10.0
+
+  - id: humi_graph
+    sensor: now_humi
+    duration: 96h
+    width: 450
+    height: 250
+    max_value: 100.0
+    min_value: 0.0
+
+display:
+  - platform: t547
+    update_interval: 60s
+    lambda: |-
+      setlocale(LC_ALL, "German");
+      it.printf(20, 55, id(roboto), TextAlign::BASELINE_LEFT, "1");
+      if (id(pers_1).state == "home") {
+        it.image(50, 10, id(icon_check));
+      } else {
+        it.image(50, 10, id(icon_close));
+      }
+      it.printf(120, 55, id(roboto), TextAlign::BASELINE_LEFT, "2");
+      if (id(pers_2).state == "home") {
+        it.image(150, 10, id(icon_check));
+      } else {
+        it.image(150, 10, id(icon_close));
+      }
+      it.strftime(960/2, 55, id(roboto), TextAlign::BASELINE_CENTER, "%H:%M", id(esptime).now());
+      it.strftime(960-10, 55, id(roboto), TextAlign::BASELINE_RIGHT, "%a %d.%m.%Y", id(esptime).now());
+      it.line(0, 60, 959, 60);
+
+      if (id(now_zustand).state=="rainy") {
+        it.printf( 80, 70, id(roboto), "Regnerisch");
+      } else if (id(now_zustand).state=="clear-night") {
+        it.printf( 80, 70, id(roboto), "Klar");
+      } else if (id(now_zustand).state=="cloudy") {
+        it.printf( 80, 70, id(roboto), "Bedeckt");
+      } else if (id(now_zustand).state=="fog") {
+        it.printf( 80, 70, id(roboto), "Nebel");
+      } else if (id(now_zustand).state=="hail") {
+        it.printf( 80, 70, id(roboto), "Hagel");
+      } else if (id(now_zustand).state=="lightning") {
+        it.printf( 80, 70, id(roboto), "Gewitter");
+      } else if (id(now_zustand).state=="lightning-rainy") {
+        it.printf( 80, 70, id(roboto), "Gewitterregen");
+      } else if (id(now_zustand).state=="partlycloudy") {
+        it.printf( 80, 70, id(roboto), "Teilw. Bedeckt");
+      } else if (id(now_zustand).state=="pouring") {
+        it.printf( 80, 70, id(roboto), "Starkregen");
+      } else if (id(now_zustand).state=="snowy") {
+        it.printf( 80, 70, id(roboto), "Schneefall");
+      } else if (id(now_zustand).state=="snowy-rainy") {
+        it.printf( 80, 70, id(roboto), "Schneeregen");
+      } else if (id(now_zustand).state=="sunny") {
+        it.printf( 80, 70, id(roboto), "Sonnig");
+      } else if (id(now_zustand).state=="windy") {
+        it.printf( 80, 70, id(roboto), "Windig");
+      } else if (id(now_zustand).state=="windy-variant") {
+        it.printf( 80, 70, id(roboto), "Böig");
+      } else {
+        it.printf( 80, 70, id(roboto), "%s", id(now_zustand).state.c_str() );
+      }
+
+      it.image(20, 140, id(icon_therm));
+      it.printf(80, 140, id(roboto), "%.1f°C", id(now_temp).state );
+
+      it.image(260, 140, id(icon_humidity));
+      it.printf(320, 140, id(roboto), "%.1f%%", id(now_humi).state );
+
+      it.image(520, 140, id(icon_wind));
+      it.printf(580, 140, id(roboto), "%.1f km/h", id(now_windspeed).state );
+
+      it.image(20, 200, id(icon_clouds));
+      it.printf(80, 200, id(roboto), "%.0f%%", id(now_clouds).state );
+
+      it.image(260, 200, id(icon_rain));
+      it.printf(320, 200, id(roboto), "%.0f%%", id(now_niedersch).state );
+
+      it.image(520, 200, id(icon_press));
+      it.printf(580, 200, id(roboto), "%.0f hPa", id(now_press).state );
+
+      it.image(20+15, 280+15, id(icon_therm));
+      it.graph(20, 280, id(temp_graph));
+      it.image(490+15, 280+15, id(icon_humidity));
+      it.graph(490, 280, id(humi_graph));

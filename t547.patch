@@ -1,0 +1,29 @@
+diff --git a/components/t547/display.py b/components/t547/display.py
+index 2e7df6e..a77da65 100644
+--- a/components/t547/display.py
++++ b/components/t547/display.py
+@@ -36,7 +36,6 @@ async def to_code(config):
+     var = cg.new_Pvariable(config[CONF_ID])
+ 
+     await cg.register_component(var, config)
+-    await display.register_display(var, config)
+ 
+     if CONF_LAMBDA in config:
+         lambda_ = await cg.process_lambda(
+diff --git a/components/t547/t547.h b/components/t547/t547.h
+index 07032a2..344129d 100644
+--- a/components/t547/t547.h
++++ b/components/t547/t547.h
+@@ -12,7 +12,8 @@
+ namespace esphome {
+ namespace t547 {
+ 
+-class T547 : public PollingComponent, public display::DisplayBuffer {
++class T547 : public display::DisplayBuffer {
++// class T547 : public PollingComponent, public display::DisplayBuffer {
+  public:
+   void set_greyscale(bool greyscale) {
+     this->greyscale_ = greyscale;
+-- 
+2.43.0
+
