@@ -27,8 +27,8 @@ ota:
   password: ""
 
 wifi:
-  ssid: "<TheSSID>"
-  password: "<Secret!>"
+  ssid: !secret ssid
+  password: !secret pass
 
   ap:
     ssid: '${friendly_name} FAP'
